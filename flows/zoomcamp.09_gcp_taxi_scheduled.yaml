@@ -1,4 +1,3 @@
-
 id: 09_gcp_taxi_scheduled
 namespace: zoomcamp
 description: |
@@ -17,6 +16,8 @@ variables:
   gcs_file: "gs://{{kv('GCP_BUCKET_NAME')}}/{{vars.file}}"
   table: "{{kv('GCP_DATASET')}}.{{inputs.taxi}}_tripdata_{{trigger.date | date('yyyy_MM')}}"
   data: "{{outputs.extract.outputFiles[inputs.taxi ~ '_tripdata_' ~ (trigger.date | date('yyyy-MM')) ~ '.csv']}}"
+  projectId: "{{kv('GCP_PROJECT_ID')}}"
+  location: "{{kv('GCP_LOCATION')}}"
 
 tasks:
   - id: set_label
@@ -36,6 +37,7 @@ tasks:
 
   - id: upload_to_gcs
     type: io.kestra.plugin.gcp.gcs.Upload
+    projectId: "{{render(vars.projectId)}}"
     from: "{{render(vars.data)}}"
     to: "{{render(vars.gcs_file)}}"
 
@@ -45,6 +47,8 @@ tasks:
     then:
       - id: bq_yellow_tripdata
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           CREATE TABLE IF NOT EXISTS `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.yellow_tripdata`
           (
@@ -73,6 +77,8 @@ tasks:
 
       - id: bq_yellow_table_ext
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           CREATE OR REPLACE EXTERNAL TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}_ext`
           (
@@ -104,6 +110,8 @@ tasks:
 
       - id: bq_yellow_table_tmp
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           CREATE OR REPLACE TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}`
           AS
@@ -121,6 +129,8 @@ tasks:
 
       - id: bq_yellow_merge
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           MERGE INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.yellow_tripdata` T
           USING `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}` S
@@ -135,6 +145,8 @@ tasks:
     then:
       - id: bq_green_tripdata
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           CREATE TABLE IF NOT EXISTS `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.green_tripdata`
           (
@@ -165,6 +177,8 @@ tasks:
 
       - id: bq_green_table_ext
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           CREATE OR REPLACE EXTERNAL TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}_ext`
           (
@@ -198,6 +212,8 @@ tasks:
 
       - id: bq_green_table_tmp
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           CREATE OR REPLACE TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}`
           AS
@@ -215,6 +231,8 @@ tasks:
 
       - id: bq_green_merge
         type: io.kestra.plugin.gcp.bigquery.Query
+        projectId: "{{render(vars.projectId)}}"
+        location: "{{render(vars.location)}}"
         sql: |
           MERGE INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.green_tripdata` T
           USING `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}` S
@@ -226,13 +244,6 @@ tasks:
   - id: purge_files
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
     description: To avoid cluttering your storage, we will remove the downloaded files
-
-pluginDefaults:
-  - type: io.kestra.plugin.gcp
-    values:
-      projectId: "{{kv('GCP_PROJECT_ID')}}"
-      location: "{{kv('GCP_LOCATION')}}"
-      bucket: "{{kv('GCP_BUCKET_NAME')}}"
 
 triggers:
   - id: green_schedule
