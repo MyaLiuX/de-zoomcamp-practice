@@ -1,0 +1,22 @@
+*.json
+.env
+docker-compose.yml
+git push -u origin main --force
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.tfstate.lock.info
+
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+.DS_Store
+Thumbs.db
+
+*credentials*
+application_default_credentials.json
+
+._
