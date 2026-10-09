@@ -27,6 +27,9 @@ variables:
   staging_table: "public.{{inputs.taxi}}_tripdata_staging"
   table: "public.{{inputs.taxi}}_tripdata"
   data: "{{outputs.extract.outputFiles[inputs.taxi ~ '_tripdata_' ~ inputs.year ~ '-' ~ inputs.month ~ '.csv']}}"
+  jdbc_url: "jdbc:postgresql://pgdatabase:5432/ny_taxi"
+  jdbc_username: "root"
+  jdbc_password: "root"
 
 tasks:
   - id: set_label
@@ -50,6 +53,9 @@ tasks:
     then:
       - id: yellow_create_table
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           CREATE TABLE IF NOT EXISTS {{render(vars.table)}} (
               unique_row_id          text,
@@ -76,6 +82,9 @@ tasks:
 
       - id: yellow_create_staging_table
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           CREATE TABLE IF NOT EXISTS {{render(vars.staging_table)}} (
               unique_row_id          text,
@@ -102,11 +111,17 @@ tasks:
 
       - id: yellow_truncate_staging_table
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           TRUNCATE TABLE {{render(vars.staging_table)}};
 
       - id: yellow_copy_in_to_staging_table
         type: io.kestra.plugin.jdbc.postgresql.CopyIn
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         format: CSV
         from: "{{render(vars.data)}}"
         table: "{{render(vars.staging_table)}}"
@@ -115,6 +130,9 @@ tasks:
 
       - id: yellow_add_unique_id_and_filename
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           UPDATE {{render(vars.staging_table)}}
           SET 
@@ -131,6 +149,9 @@ tasks:
 
       - id: yellow_merge_data
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           MERGE INTO {{render(vars.table)}} AS T
           USING {{render(vars.staging_table)}} AS S
@@ -155,6 +176,9 @@ tasks:
     then:
       - id: green_create_table
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           CREATE TABLE IF NOT EXISTS {{render(vars.table)}} (
               unique_row_id          text,
@@ -183,6 +207,9 @@ tasks:
 
       - id: green_create_staging_table
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           CREATE TABLE IF NOT EXISTS {{render(vars.staging_table)}} (
               unique_row_id          text,
@@ -211,11 +238,17 @@ tasks:
 
       - id: green_truncate_staging_table
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           TRUNCATE TABLE {{render(vars.staging_table)}};
 
       - id: green_copy_in_to_staging_table
         type: io.kestra.plugin.jdbc.postgresql.CopyIn
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         format: CSV
         from: "{{render(vars.data)}}"
         table: "{{render(vars.staging_table)}}"
@@ -224,6 +257,9 @@ tasks:
 
       - id: green_add_unique_id_and_filename
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           UPDATE {{render(vars.staging_table)}}
           SET 
@@ -240,6 +276,9 @@ tasks:
 
       - id: green_merge_data
         type: io.kestra.plugin.jdbc.postgresql.Queries
+        url: "{{render(vars.jdbc_url)}}"
+        username: "{{render(vars.jdbc_username)}}"
+        password: "{{render(vars.jdbc_password)}}"
         sql: |
           MERGE INTO {{render(vars.table)}} AS T
           USING {{render(vars.staging_table)}} AS S
@@ -261,10 +300,3 @@ tasks:
   - id: purge_files
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
     description: This will remove output files. If you'd like to explore Kestra outputs, disable it.
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.postgresql
-    values:
-      url: jdbc:postgresql://pgdatabase:5432/ny_taxi
-      username: root
-      password: root
