@@ -51,7 +51,6 @@ tasks:
   - id: upload_to_gcs
     type: io.kestra.plugin.gcp.gcs.Upload
     projectId: "{{render(vars.projectId)}}"
-    bucket: "{{render(vars.bucket)}}"
     from: "{{render(vars.data)}}"
     to: "{{render(vars.gcs_file)}}"
 
